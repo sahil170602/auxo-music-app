@@ -215,38 +215,41 @@ export default function Player({ showBottomNav = true }) {
     <>
       {/* ================== MINI PLAYER ================== */}
       {!isExpanded && (
-        <div 
-          onClick={openExpandedPlayer}
-          className={`fixed left-4 right-4 h-16 bg-neutral-900/90 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center px-4 gap-4 z-[600] animate-slide-up-mini shadow-2xl cursor-pointer overflow-hidden transition-all duration-300 ${
-            showBottomNav ? 'bottom-[calc(6.5rem+env(safe-area-inset-bottom,0px))]' : 'bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))]'
-          }`}
-        >
-          <img src={currentSong.image_url} className="w-10 h-10 rounded-lg object-cover shadow-lg" alt="" />
-          <div className="flex-1 min-w-0">
-            <p className="text-white text-xs font-bold truncate">{currentSong.title}</p>
-            <p className="text-neutral-400 text-[9px] truncate">{currentSong.artists?.name || 'Unknown Artist'}</p>
-          </div>
-          <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-            <button disabled={currentIndex === 0} onClick={handlePrev} className="text-white disabled:opacity-30 active:scale-90 transition-transform">
-              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6L18 18V6z"/></svg>
-            </button>
-            <button onClick={togglePlay} className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black active:scale-90 transition-transform shadow-md">
-              {isPlaying ? (
-                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-              ) : (
-                <svg className="w-8 h-8 fill-current translate-x-0.5" viewBox="0 0 28 24"><path d="M8 5v14l11-7z"/></svg>
-              )}
-            </button>
-            <button disabled={currentIndex === queueLength - 1 && repeatMode !== 'all'} onClick={handleNext} className="text-white disabled:opacity-30 active:scale-90 transition-transform">
-              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-            </button>
-          </div>
+  <div 
+    onClick={openExpandedPlayer}
+    className={`fixed left-4 right-4 h-16 bg-neutral-900/90 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center px-4 gap-4 z-[600] animate-slide-up-mini shadow-2xl cursor-pointer overflow-hidden transition-all duration-300 ${
+      /* 🔴 FIXED: Changed 6.5rem to 5.25rem to sit flush above the BottomNav */
+      showBottomNav 
+        ? 'bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))]' 
+        : 'bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))]'
+    }`}
+  >
+    <img src={currentSong.image_url} className="w-10 h-10 rounded-lg object-cover shadow-lg" alt="" />
+    <div className="flex-1 min-w-0">
+      <p className="text-white text-xs font-bold truncate">{currentSong.title}</p>
+      <p className="text-neutral-400 text-[9px] truncate">{currentSong.artists?.name || 'Unknown Artist'}</p>
+    </div>
+    <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+      <button disabled={currentIndex === 0} onClick={handlePrev} className="text-white disabled:opacity-30 active:scale-90 transition-transform">
+        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6L18 18V6z"/></svg>
+      </button>
+      <button onClick={togglePlay} className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black active:scale-90 transition-transform shadow-md">
+        {isPlaying ? (
+          <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        ) : (
+          <svg className="w-8 h-8 fill-current translate-x-0.5" viewBox="0 0 28 24"><path d="M8 5v14l11-7z"/></svg>
+        )}
+      </button>
+      <button disabled={currentIndex === queueLength - 1 && repeatMode !== 'all'} onClick={handleNext} className="text-white disabled:opacity-30 active:scale-90 transition-transform">
+        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+      </button>
+    </div>
 
-          <div className="absolute bottom-0 left-0 h-[2px] bg-white/10 w-full">
-            <div className="h-full bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.8)]" style={{ width: `${progressPercent}%` }}></div>
-          </div>
-        </div>
-      )}
+    <div className="absolute bottom-0 left-0 h-[2px] bg-white/10 w-full">
+      <div className="h-full bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.8)]" style={{ width: `${progressPercent}%` }}></div>
+    </div>
+  </div>
+)}
 
       {/* ================== FULL PLAYER SCREEN ================== */}
       {isExpanded && (
