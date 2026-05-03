@@ -1,5 +1,6 @@
+// src/context/MusicContext.jsx
 import { createContext, useState, useContext, useRef, useEffect } from 'react';
-import { supabase } from '../lib/supabase'; // 🔴 Don't forget this import!
+import { supabase } from '../lib/supabase'; 
 
 const MusicContext = createContext();
 
@@ -40,7 +41,7 @@ export const MusicProvider = ({ children }) => {
     }
   }, [currentSong]);
 
-  // 🔴 NEW: The "Recently Played" Background Tracker
+  // 🔴 The "Recently Played" Background Tracker
   useEffect(() => {
     const recordRecentPlay = async () => {
       if (!currentSong) return;
@@ -65,7 +66,7 @@ export const MusicProvider = ({ children }) => {
             played_at: new Date().toISOString() 
           });
 
-        // 3. Clear the cache so the Home Screen refreshes automatically!
+        // 3. Clear the cache so the Home Screen refreshes automatically
         localStorage.removeItem('auxo_list_recently-played'); 
         
       } catch (err) {
@@ -74,9 +75,54 @@ export const MusicProvider = ({ children }) => {
     };
 
     recordRecentPlay();
-  }, [currentSong]); // Triggers automatically whenever the song changes
+  }, [currentSong]); 
 
-  // Auto-Play Next / Repeat Logic
+
+  // 🔴 ROBUST NEXT LOGIC (Handles Shuffle & Repeat All)
+  const handleNext = () => {
+    if (!queue || queue.length === 0) return;
+
+    if (isShuffle) {
+      // Pick a random index, ensuring it doesn't just play the exact same song if queue > 1
+      let randomIndex = Math.floor(Math.random() * queue.length);
+      if (queue.length > 1 && randomIndex === currentIndex) {
+        randomIndex = (randomIndex + 1) % queue.length;
+      }
+      setCurrentIndex(randomIndex);
+      setCurrentSong(queue[randomIndex]);
+    } else if (currentIndex < queue.length - 1) {
+      setCurrentIndex(prev => prev + 1);
+      setCurrentSong(queue[currentIndex + 1]);
+    } else if (repeatMode === 'all') {
+      // Loop back to the very first song
+      setCurrentIndex(0);
+      setCurrentSong(queue[0]);
+    } else {
+      setIsPlaying(false);
+    }
+  };
+
+  // 🔴 ROBUST PREVIOUS LOGIC (Handles 3-second Rewind & Repeat All)
+  const handlePrev = () => {
+    if (!queue || queue.length === 0) return;
+
+    // Native app feel: If playing for >3 seconds, restart song instead of skipping back
+    if (audioRef.current && audioRef.current.currentTime > 3) {
+      audioRef.current.currentTime = 0;
+      return;
+    }
+
+    if (currentIndex > 0) {
+      setCurrentIndex(prev => prev - 1);
+      setCurrentSong(queue[currentIndex - 1]);
+    } else if (repeatMode === 'all') {
+      // Loop back to the very last song in the queue
+      setCurrentIndex(queue.length - 1);
+      setCurrentSong(queue[queue.length - 1]);
+    }
+  };
+
+  // Auto-Play Next / Repeat One Logic
   useEffect(() => {
     const audio = audioRef.current;
     const handleEnded = () => {
@@ -89,30 +135,14 @@ export const MusicProvider = ({ children }) => {
     };
     audio.addEventListener('ended', handleEnded);
     return () => audio.removeEventListener('ended', handleEnded);
-  }, [currentIndex, queue, repeatMode]);
-
-  const handleNext = () => {
-    if (currentIndex < queue.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-      setCurrentSong(queue[currentIndex + 1]);
-    } else if (repeatMode === 'all') {
-      setCurrentIndex(0);
-      setCurrentSong(queue[0]);
-    } else {
-      setIsPlaying(false);
-    }
-  };
-
-  const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
-      setCurrentSong(queue[currentIndex - 1]);
-    }
-  };
+  }, [currentIndex, queue, repeatMode, isShuffle]); // Added isShuffle so it updates the listener properly
 
   const togglePlay = () => {
-    if (isPlaying) audioRef.current.pause();
-    else audioRef.current.play();
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
     setIsPlaying(!isPlaying);
   };
 
