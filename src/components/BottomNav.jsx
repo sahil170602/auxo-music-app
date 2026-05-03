@@ -1,4 +1,4 @@
-// src/components/BottomNav.jsx
+
 export default function BottomNav({ activeTab, setActiveTab }) {
   // 🔴 5 tabs to calculate the math for
   const tabs = ['home', 'search', 'library', 'premium', 'ai'];

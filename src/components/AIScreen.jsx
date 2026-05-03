@@ -1,5 +1,3 @@
-// src/components/AIScreen.jsx
-
 export default function AIScreen() {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center px-6 animate-fade-in relative overflow-hidden pb-32">
