@@ -49,7 +49,6 @@ export default function Header({ setActiveTab }) {
         </div>
         
         {/* Subtle "Premium" dot or indicator if you want one */}
-        <div className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-400 border-2 border-black rounded-full shadow-[0_0_10px_rgba(34,211,238,0.5)]"></div>
       </button>
       
     </header>
