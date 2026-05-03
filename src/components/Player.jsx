@@ -18,7 +18,7 @@ export default function Player({ showBottomNav = true }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // 🔴 NEW: LIKED STATUS STATE
+  // LIKED STATUS STATE
   const [isLiked, setIsLiked] = useState(false);
 
   // Parse Real Lyrics from the Database
@@ -58,16 +58,14 @@ export default function Player({ showBottomNav = true }) {
     }
 
     if (isLiked) {
-      // Remove Like
-      setIsLiked(false); // Optimistic UI update
+      setIsLiked(false); 
       await supabase
         .from('liked_songs')
         .delete()
         .eq('user_id', session.user.id)
         .eq('song_id', currentSong.id);
     } else {
-      // Add Like
-      setIsLiked(true); // Optimistic UI update
+      setIsLiked(true); 
       await supabase
         .from('liked_songs')
         .insert({ user_id: session.user.id, song_id: currentSong.id });
@@ -142,6 +140,60 @@ export default function Player({ showBottomNav = true }) {
   };
 
   // =========================================================
+  // MEDIA SESSION API (OS Control Center & Lock Screen)
+  // =========================================================
+  
+  // 🔴 NEW: Helper to keep OS progress bar synced with actual audio
+  const updateOSPosition = () => {
+    if ('mediaSession' in navigator && audioRef?.current && audioRef.current.duration > 0) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: audioRef.current.duration,
+          playbackRate: audioRef.current.playbackRate || 1,
+          position: audioRef.current.currentTime
+        });
+      } catch (err) { /* Catch Safari quirk if duration isn't fully ready */ }
+    }
+  };
+
+  // Sync OS slider automatically when play state or duration changes
+  useEffect(() => {
+    updateOSPosition();
+  }, [isPlaying, duration]);
+
+  useEffect(() => {
+    if ('mediaSession' in navigator && currentSong) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentSong.title || 'Unknown Title',
+        artist: currentSong.artists?.name || 'Unknown Artist',
+        album: 'AUXO',
+        artwork: [
+          { src: currentSong.image_url, sizes: '96x96', type: 'image/jpeg' },
+          { src: currentSong.image_url, sizes: '128x128', type: 'image/jpeg' },
+          { src: currentSong.image_url, sizes: '192x192', type: 'image/jpeg' },
+          { src: currentSong.image_url, sizes: '256x256', type: 'image/jpeg' },
+          { src: currentSong.image_url, sizes: '384x384', type: 'image/jpeg' },
+          { src: currentSong.image_url, sizes: '512x512', type: 'image/jpeg' },
+        ]
+      });
+
+      navigator.mediaSession.setActionHandler('play', () => togglePlay());
+      navigator.mediaSession.setActionHandler('pause', () => togglePlay());
+      navigator.mediaSession.setActionHandler('previoustrack', () => handlePrev());
+      navigator.mediaSession.setActionHandler('nexttrack', () => handleNext());
+      
+      // 🔴 NEW: Handle user dragging the progress bar on Lock Screen
+      navigator.mediaSession.setActionHandler('seekto', (details) => {
+        if (audioRef?.current) {
+          audioRef.current.currentTime = details.seekTime;
+          setCurrentTime(details.seekTime);
+          updateOSPosition(); // Snap the OS slider back into place
+        }
+      });
+    }
+  }, [currentSong, togglePlay, handleNext, handlePrev, audioRef]);
+
+  // =========================================================
   // AUDIO SYNC & FLOATING LYRICS ENGINE
   // =========================================================
   useEffect(() => {
@@ -181,6 +233,7 @@ export default function Player({ showBottomNav = true }) {
     if (audioRef?.current) {
       audioRef.current.currentTime = time;
       setCurrentTime(time);
+      updateOSPosition(); // 🔴 Update OS Lock Screen when dragging in-app slider
     }
   };
 
@@ -215,41 +268,40 @@ export default function Player({ showBottomNav = true }) {
     <>
       {/* ================== MINI PLAYER ================== */}
       {!isExpanded && (
-  <div 
-    onClick={openExpandedPlayer}
-    className={`fixed left-4 right-4 h-16 bg-neutral-900/90 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center px-4 gap-4 z-[600] animate-slide-up-mini shadow-2xl cursor-pointer overflow-hidden transition-all duration-300 ${
-      /* 🔴 FIXED: Changed 6.5rem to 5.25rem to sit flush above the BottomNav */
-      showBottomNav 
-        ? 'bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))]' 
-        : 'bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))]'
-    }`}
-  >
-    <img src={currentSong.image_url} className="w-10 h-10 rounded-lg object-cover shadow-lg" alt="" />
-    <div className="flex-1 min-w-0">
-      <p className="text-white text-xs font-bold truncate">{currentSong.title}</p>
-      <p className="text-neutral-400 text-[9px] truncate">{currentSong.artists?.name || 'Unknown Artist'}</p>
-    </div>
-    <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-      <button disabled={currentIndex === 0} onClick={handlePrev} className="text-white disabled:opacity-30 active:scale-90 transition-transform">
-        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6L18 18V6z"/></svg>
-      </button>
-      <button onClick={togglePlay} className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black active:scale-90 transition-transform shadow-md">
-        {isPlaying ? (
-          <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-        ) : (
-          <svg className="w-8 h-8 fill-current translate-x-0.5" viewBox="0 0 28 24"><path d="M8 5v14l11-7z"/></svg>
-        )}
-      </button>
-      <button disabled={currentIndex === queueLength - 1 && repeatMode !== 'all'} onClick={handleNext} className="text-white disabled:opacity-30 active:scale-90 transition-transform">
-        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-      </button>
-    </div>
+        <div 
+          onClick={openExpandedPlayer}
+          className={`fixed left-4 right-4 h-16 bg-neutral-900/90 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center px-4 gap-4 z-[600] animate-slide-up-mini shadow-2xl cursor-pointer overflow-hidden transition-all duration-300 ${
+            showBottomNav 
+              ? 'bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))]' 
+              : 'bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))]'
+          }`}
+        >
+          <img src={currentSong.image_url} className="w-10 h-10 rounded-lg object-cover shadow-lg" alt="" />
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-xs font-bold truncate">{currentSong.title}</p>
+            <p className="text-neutral-400 text-[9px] truncate">{currentSong.artists?.name || 'Unknown Artist'}</p>
+          </div>
+          <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+            <button disabled={currentIndex === 0} onClick={handlePrev} className="text-white disabled:opacity-30 active:scale-90 transition-transform">
+              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6L18 18V6z"/></svg>
+            </button>
+            <button onClick={togglePlay} className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black active:scale-90 transition-transform shadow-md">
+              {isPlaying ? (
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+              ) : (
+                <svg className="w-8 h-8 fill-current translate-x-0.5" viewBox="0 0 28 24"><path d="M8 5v14l11-7z"/></svg>
+              )}
+            </button>
+            <button disabled={currentIndex === queueLength - 1 && repeatMode !== 'all'} onClick={handleNext} className="text-white disabled:opacity-30 active:scale-90 transition-transform">
+              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+          </div>
 
-    <div className="absolute bottom-0 left-0 h-[2px] bg-white/10 w-full">
-      <div className="h-full bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.8)]" style={{ width: `${progressPercent}%` }}></div>
-    </div>
-  </div>
-)}
+          <div className="absolute bottom-0 left-0 h-[2px] bg-white/10 w-full">
+            <div className="h-full bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.8)]" style={{ width: `${progressPercent}%` }}></div>
+          </div>
+        </div>
+      )}
 
       {/* ================== FULL PLAYER SCREEN ================== */}
       {isExpanded && (
@@ -323,7 +375,6 @@ export default function Player({ showBottomNav = true }) {
                  <button disabled={currentIndex === queueLength - 1 && repeatMode !== 'all'} onClick={handleNext} className="text-white disabled:opacity-20 scale-125 active:scale-100 transition-transform"><svg className="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
               </div>
 
-              {/* 🔴 DYNAMIC LIKED BUTTON */}
               <div className="flex justify-center pt-2">
                 <button 
                   onClick={handleToggleLike}
@@ -334,10 +385,8 @@ export default function Player({ showBottomNav = true }) {
                   }`}
                 >
                   {isLiked ? (
-                    // Filled Heart
                     <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                   ) : (
-                    // Outline Heart
                     <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg>
                   )}
                   <span className="text-[10px] font-black uppercase tracking-widest">{isLiked ? 'Liked' : 'Like Track'}</span>
@@ -350,7 +399,14 @@ export default function Player({ showBottomNav = true }) {
                 <h3 className="text-[15px] font-black text-neutral-500  tracking-[0em] mb-6 pl-1">Suggested Tracks</h3>
                 <div className="flex overflow-x-auto no-scrollbar gap-4 -mx-8 px-8 snap-x">
                   {suggestions.map((song) => (
-                    <div key={song.id} onClick={() => playSong([song], 0)} className="snap-start shrink-0 w-32 flex flex-col gap-3 active:scale-95 transition-transform cursor-pointer">
+                    <div 
+                      key={song.id} 
+                      onClick={() => {
+                        const index = suggestions.findIndex(s => s.id === song.id);
+                        playSong(suggestions, index);
+                      }} 
+                      className="snap-start shrink-0 w-32 flex flex-col gap-3 active:scale-95 transition-transform cursor-pointer"
+                    >
                       <div className="aspect-square rounded-[2rem] overflow-hidden shadow-xl border border-white/10 bg-neutral-900">
                         <img src={song.image_url} className="w-full h-full object-cover" alt="" />
                       </div>
@@ -418,7 +474,6 @@ export default function Player({ showBottomNav = true }) {
                        })}
                     </div>
                  ) : (
-                   // Fallback UI if there are no lyrics in the DB for this song
                    <div className="flex flex-col items-center justify-center text-center px-8 opacity-50">
                      <svg className="w-12 h-12 mb-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
                      <h4 className="text-white text-lg font-bold">No Lyrics Available</h4>
