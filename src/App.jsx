@@ -71,35 +71,8 @@ function App() {
 
   if (isLoading) return <SplashScreen onFinish={() => setIsLoading(false)} />;
 
-  const renderContent = () => {
-    // 🔴 1. SUBPAGE ROUTING (Overlays)
-    if (subPage) {
-      if (subPage.type === 'profile') {
-        return <ProfileScreen onBack={closeSubPage} />;
-      }
-
-      if (subPage.type === 'album-detail') {
-        return (
-          <AlbumDetailScreen 
-            album={subPage.album} 
-            onBack={closeSubPage} 
-            onOpenSubPage={openSubPage}
-            playQueue={handlePlayQueue}
-          />
-        );
-      }
-      
-      return (
-        <SeeAllScreen 
-          {...subPage} 
-          onBack={closeSubPage} 
-          playQueue={handlePlayQueue} 
-          onOpenSubPage={openSubPage} 
-        />
-      );
-    }
-
-    // 🔴 2. TAB ROUTING
+  // 🔴 1. MAIN TABS (Always stays mounted in the background so it doesn't vanish)
+  const renderMainTab = () => {
     switch (activeTab) {
       case 'home':
         return <HomeScreen onOpenSubPage={openSubPage} playQueue={handlePlayQueue} />;
@@ -116,6 +89,35 @@ function App() {
     }
   };
 
+  // 🔴 2. SUBPAGES & OVERLAYS (Renders ON TOP of the main tab)
+  const renderOverlay = () => {
+    if (!subPage) return null;
+
+    if (subPage.type === 'profile') {
+      return <ProfileScreen onBack={closeSubPage} />;
+    }
+
+    if (subPage.type === 'album-detail') {
+      return (
+        <AlbumDetailScreen 
+          album={subPage.album} 
+          onBack={closeSubPage} 
+          onOpenSubPage={openSubPage}
+          playQueue={handlePlayQueue}
+        />
+      );
+    }
+    
+    return (
+      <SeeAllScreen 
+        {...subPage} 
+        onBack={closeSubPage} 
+        playQueue={handlePlayQueue} 
+        onOpenSubPage={openSubPage} 
+      />
+    );
+  };
+
   return (
     <>
       {!isAuthenticated ? (
@@ -127,7 +129,11 @@ function App() {
           showUI={showUI}
           onOpenSubPage={openSubPage}
         >
-          {renderContent()}
+          {/* Main tab underneath */}
+          {renderMainTab()}
+          
+          {/* Overlays on top */}
+          {renderOverlay()}
         </MobileLayout>
       )}
     </>
