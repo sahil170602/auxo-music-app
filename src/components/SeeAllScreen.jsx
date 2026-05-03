@@ -121,7 +121,7 @@ export default function SeeAllScreen({ type, title, id, userId, onBack, playQueu
       </div>
 
       {/* 2. CONTENT AREA */}
-      <div className="p-4 pb-5 px-6"> 
+      <div className="p-4 pb-25 px-6"> 
         {loading && items.length === 0 ? (
           <div className="py-32 flex flex-col items-center justify-center gap-5">
             <div className="w-10 h-10 border-4 border-fuchsia-500/20 border-t-fuchsia-500 rounded-full animate-spin"></div>
