@@ -344,7 +344,7 @@ export default function Player({ showBottomNav = true }) {
 
             {suggestions.length > 0 && (
               <div className="mt-14 mb-8 shrink-0">
-                <h3 className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.3em] mb-6 pl-1">Suggested Tracks</h3>
+                <h3 className="text-[15px] font-black text-neutral-500  tracking-[0em] mb-6 pl-1">Suggested Tracks</h3>
                 <div className="flex overflow-x-auto no-scrollbar gap-4 -mx-8 px-8 snap-x">
                   {suggestions.map((song) => (
                     <div key={song.id} onClick={() => playSong([song], 0)} className="snap-start shrink-0 w-32 flex flex-col gap-3 active:scale-95 transition-transform cursor-pointer">
