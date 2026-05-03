@@ -208,7 +208,7 @@ export default function HomeScreen({ onOpenSubPage, playQueue }) {
               onClick={() => handleItemClick(item)}
               className={`snap-start shrink-0 cursor-pointer group relative overflow-hidden transition-all duration-300 active:scale-95 ${
                 isAlbum 
-                  ? "w-[280px] aspect-[2.8/4] rounded-[2.5rem] shadow-[0_20px_40px_rgba(0,0,0,0.5)] border border-white/10" 
+                  ? "w-[200px] aspect-[1.5/2] rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.5)] border border-white/10" 
                   : "w-36 flex flex-col gap-2"
               }`}
             >
@@ -222,15 +222,11 @@ export default function HomeScreen({ onOpenSubPage, playQueue }) {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent opacity-90"></div>
                   <div className="absolute bottom-0 left-0 w-full p-8">
-                    <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-white text-[9px] font-black uppercase tracking-widest mb-3 border border-white/20">
-                      Album
-                    </span>
-                    <h3 className="text-white text-3xl font-black italic tracking-tighter mb-1 line-clamp-2 leading-tight">
+                  
+                    <h3 className="text-white text-2xl font-black  tracking-tighter mb-0 line-clamp-2 leading-tight">
                       {item.title}
                     </h3>
-                    <p className="text-fuchsia-400 text-xs font-bold uppercase tracking-widest truncate">
-                      {item.subtitle || item.songs?.artists?.name}
-                    </p>
+                   
                   </div>
                 </>
               ) : (
