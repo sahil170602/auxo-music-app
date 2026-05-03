@@ -111,12 +111,12 @@ export default function SearchScreen({ onOpenSubPage }) {
   };
 
   return (
-    <div className="w-full flex flex-col pt-4 pb-24 animate-fade-in px-6 no-scrollbar overflow-y-auto">
+    <div className="w-full flex flex-col pt-0 pb-24 animate-fade-in px-6 no-scrollbar overflow-y-auto">
       
       {/* SEARCH INPUT */}
-      <div className="sticky top-0 z-50 pt-2 pb-6 bg-black/80 backdrop-blur-xl -mx-6 px-6">
+      <div className="sticky top-0 z-50 pt-2 pb-6 bg-black/00 backdrop-blur-xl -mx-6 px-6">
         <div className="relative group">
-          <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-000" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input 
@@ -135,7 +135,7 @@ export default function SearchScreen({ onOpenSubPage }) {
           {/* RECENT SEARCHES */}
           {recentSearches.length > 0 && (
             <div className="mb-8 animate-fade-in">
-              <h3 className="text-[12px] font-black text-neutral-500 uppercase tracking-[0.2em] mb-4 ml-1">Recent Searches</h3>
+              <h3 className="text-[14px] font-black text-neutral-500  tracking-tight mb-4 ml-1">Recent Searches</h3>
               <div className="flex flex-wrap gap-2">
                 {recentSearches.map((q, i) => (
                   <button 
@@ -152,7 +152,7 @@ export default function SearchScreen({ onOpenSubPage }) {
 
           {/* DYNAMIC RECOMMENDATIONS */}
           <div className="animate-fade-in">
-            <h3 className="text-[12px] font-black text-fuchsia-500 uppercase tracking-[0.2em] mb-6 ml-1">Recommended for you</h3>
+            <h3 className="text-[16px] font-black text-fuchsia-500  tracking-tight mb-6 ml-1">Recommended for you</h3>
             
             <div className="flex overflow-x-auto no-scrollbar gap-6 snap-x -mx-6 px-6 pb-4">
               {suggestions.length > 0 ? suggestions.map((song) => (
