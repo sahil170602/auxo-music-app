@@ -35,7 +35,7 @@ export default function Header({ setActiveTab }) {
       
       {/* Right Side: Profile Icon */}
       <button 
-        onClick={() => setActiveTab('profile')}
+        onClick={() => setActiveTab('profileScreen')}
         className="group relative flex items-center active:scale-90 transition-transform"
       >
         <div className="w-10 h-10 rounded-full bg-neutral-800 border-2 border-fuchsia-500/50 overflow-hidden shadow-[0_0_15px_rgba(217,70,239,0.3)] group-hover:border-fuchsia-400 transition-colors">
