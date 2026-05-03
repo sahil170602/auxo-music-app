@@ -1,5 +1,5 @@
-// src/context/MusicContext.jsx
 import { createContext, useState, useContext, useRef, useEffect } from 'react';
+import { supabase } from '../lib/supabase'; // 🔴 Don't forget this import!
 
 const MusicContext = createContext();
 
@@ -20,7 +20,7 @@ export const MusicProvider = ({ children }) => {
     setIsPlaying(true);
   };
 
-  // 🔴 THE FIX IS HERE
+  // 🔴 Playback Trigger
   useEffect(() => {
     if (currentSong) {
       // Check for audio_url (our DB column name). 
@@ -40,6 +40,43 @@ export const MusicProvider = ({ children }) => {
     }
   }, [currentSong]);
 
+  // 🔴 NEW: The "Recently Played" Background Tracker
+  useEffect(() => {
+    const recordRecentPlay = async () => {
+      if (!currentSong) return;
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        // 1. Delete the song if it's already in the history to prevent duplicates
+        await supabase
+          .from('recently_played')
+          .delete()
+          .eq('user_id', session.user.id)
+          .eq('song_id', currentSong.id);
+
+        // 2. Insert it again as the absolute most recent play
+        await supabase
+          .from('recently_played')
+          .insert({
+            user_id: session.user.id,
+            song_id: currentSong.id,
+            played_at: new Date().toISOString() 
+          });
+
+        // 3. Clear the cache so the Home Screen refreshes automatically!
+        localStorage.removeItem('auxo_list_recently-played'); 
+        
+      } catch (err) {
+        console.error("Error updating recently played:", err);
+      }
+    };
+
+    recordRecentPlay();
+  }, [currentSong]); // Triggers automatically whenever the song changes
+
+  // Auto-Play Next / Repeat Logic
   useEffect(() => {
     const audio = audioRef.current;
     const handleEnded = () => {
@@ -83,7 +120,7 @@ export const MusicProvider = ({ children }) => {
     <MusicContext.Provider value={{ 
       currentSong, isPlaying, togglePlay, handleNext, handlePrev, 
       playSong, repeatMode, setRepeatMode, isShuffle, setIsShuffle,
-      currentIndex, queueLength: queue.length,audioRef
+      currentIndex, queueLength: queue.length, audioRef
     }}>
       {children}
     </MusicContext.Provider>
