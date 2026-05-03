@@ -10,8 +10,9 @@ import SeeAllScreen from './components/SeeAllScreen';
 import SearchScreen from './components/SearchScreen';
 import LibraryScreen from './components/LibraryScreen';
 import AlbumDetailScreen from './components/AlbumDetailScreen';
-import PremiumScreen from './components/PremiumScreen'; // 🔴 IMPORTED NEW SCREEN
-import AIScreen from './components/AIScreen'; // 🔴 IMPORTED NEW SCREEN
+import PremiumScreen from './components/PremiumScreen'; 
+import AIScreen from './components/AIScreen'; 
+import ProfileScreen from './components/ProfileScreen'; 
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -64,14 +65,19 @@ function App() {
     }
   };
 
-  // 🔴 UPDATED: Added 'premium' and 'ai' so the bottom nav stays visible on these pages!
+  // UI logic: Keep UI visible for main tabs, but hide for subpages/overlays
   const tabsWithUI = ['home', 'search', 'library', 'premium', 'ai'];
   const showUI = tabsWithUI.includes(activeTab) && !subPage;
 
   if (isLoading) return <SplashScreen onFinish={() => setIsLoading(false)} />;
 
   const renderContent = () => {
+    // 🔴 1. SUBPAGE ROUTING (Overlays)
     if (subPage) {
+      if (subPage.type === 'profile') {
+        return <ProfileScreen onBack={closeSubPage} />;
+      }
+
       if (subPage.type === 'album-detail') {
         return (
           <AlbumDetailScreen 
@@ -93,7 +99,7 @@ function App() {
       );
     }
 
-    // 🔴 UPDATED: Routing logic now points to our beautiful new components
+    // 🔴 2. TAB ROUTING
     switch (activeTab) {
       case 'home':
         return <HomeScreen onOpenSubPage={openSubPage} playQueue={handlePlayQueue} />;
@@ -119,6 +125,7 @@ function App() {
           activeTab={activeTab} 
           setActiveTab={setActiveTab} 
           showUI={showUI}
+          onOpenSubPage={openSubPage}
         >
           {renderContent()}
         </MobileLayout>
