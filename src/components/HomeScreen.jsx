@@ -120,14 +120,23 @@ export default function HomeScreen({ onOpenSubPage, playQueue }) {
   }, [heroCards.length]);
 
   // --- SMART CLICK HANDLER ---
-  const handleItemClick = (item) => {
+  // 🔴 FIXED: Now accepts the full currentSectionItems array to build a proper queue
+  const handleItemClick = (item, currentSectionItems) => {
     if (item.album_id) {
       onOpenSubPage({ 
         type: 'album-detail', 
         album: { id: item.album_id, title: item.title, image_url: item.image_url } 
       });
     } else if (item.song_id && item.songs) {
-      playQueue([item.songs], 0);
+      // Extract all valid songs from this section to create the queue
+      const songQueue = currentSectionItems
+        .filter(i => i.song_id && i.songs)
+        .map(i => i.songs);
+      
+      // Find the index of the clicked song
+      const queueIndex = songQueue.findIndex(s => s.id === item.songs.id);
+      
+      playQueue(songQueue, queueIndex !== -1 ? queueIndex : 0);
     }
   };
 
@@ -173,100 +182,100 @@ export default function HomeScreen({ onOpenSubPage, playQueue }) {
                 className="text-fuchsia-500 text-[10px] font-black uppercase tracking-widest">See All</button>
             </div>
             <div className="flex overflow-x-auto no-scrollbar gap-4 px-6 snap-x">
-              {recentlyPlayed.map((song) => (
-                <div key={song.id} onClick={() => playQueue([song], 0)} className="snap-start shrink-0 flex flex-col gap-2 group cursor-pointer active:scale-95 transition-transform">
+              {/* 🔴 FIXED: Map provides index, passes full array to playQueue */}
+              {recentlyPlayed.map((song, index) => (
+                <div key={song.id} onClick={() => playQueue(recentlyPlayed, index)} className="snap-start shrink-0 flex flex-col gap-2 group cursor-pointer active:scale-95 transition-transform">
                   <div className="w-32 h-32 rounded-3xl shadow-xl border border-white/10 relative overflow-hidden bg-neutral-900">
                     <img src={song.image_url} className="absolute inset-0 w-full h-full object-cover" alt="" />
                   </div>
-                  <p className="text-white font-bold text-xs truncate w-32 px-1">{song.title}</p>
+                  <p className="text-white font-bold text-[14px] truncate w-32 px-8">{song.title}</p>
                 </div>
               ))}
             </div>
           </div>
         )}
-{/* 2. DYNAMIC SECTIONS */}
-{sections.map((section) => (
-  <div key={section.id} className="animate-fade-in">
-    <div className="flex justify-between items-center px-6 mb-4">
-      <h3 className="text-xl font-bold text-white tracking-tight">{section.title}</h3>
-      <button 
-        onClick={() => onOpenSubPage({ type: 'section', title: section.title, id: section.id })}
-        className="text-fuchsia-500 text-[10px] font-black uppercase tracking-widest"
-      >
-        See All
-      </button>
-    </div>
 
-    {section.type === 'horizontal-cards' ? (
-      <div className="flex overflow-x-auto no-scrollbar gap-6 px-6 snap-x pb-4">
-        {section.items.map((item) => {
-          const isAlbum = !!item.album_id;
+        {/* 2. DYNAMIC SECTIONS */}
+        {sections.map((section) => (
+          <div key={section.id} className="animate-fade-in">
+            <div className="flex justify-between items-center px-6 mb-4">
+              <h3 className="text-xl font-bold text-white tracking-tight">{section.title}</h3>
+              <button 
+                onClick={() => onOpenSubPage({ type: 'section', title: section.title, id: section.id })}
+                className="text-fuchsia-500 text-[10px] font-black uppercase tracking-widest"
+              >
+                See All
+              </button>
+            </div>
 
-          return (
-            <div 
-              key={item.id} 
-              onClick={() => handleItemClick(item)}
-              className={`snap-start shrink-0 cursor-pointer group relative overflow-hidden transition-all duration-300 active:scale-95 ${
-                isAlbum 
-                  ? "w-[280px] aspect-[2.8/4] rounded-[2.5rem] shadow-[0_20px_40px_rgba(0,0,0,0.5)] border border-white/10" 
-                  : "w-36 flex flex-col gap-2"
-              }`}
-            >
-              {isAlbum ? (
-                /* 🔴 MASSIVE ALBUM LAYOUT */
-                <>
-                  <img 
-                    src={item.image_url} 
-                    className="absolute inset-0 w-full h-full object-cover group-active:scale-105 transition-transform duration-700" 
-                    alt={item.title} 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent opacity-90"></div>
-                  <div className="absolute bottom-0 left-0 w-full p-8">
-                    <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-white text-[9px] font-black uppercase tracking-widest mb-3 border border-white/20">
-                      Album
-                    </span>
-                    <h3 className="text-white text-3xl font-black italic tracking-tighter mb-1 line-clamp-2 leading-tight">
-                      {item.title}
-                    </h3>
-                    <p className="text-fuchsia-400 text-xs font-bold uppercase tracking-widest truncate">
-                      {item.subtitle || item.songs?.artists?.name}
-                    </p>
+            {section.type === 'horizontal-cards' ? (
+              <div className="flex overflow-x-auto no-scrollbar gap-6 px-6 snap-x pb-4">
+                {section.items.map((item) => {
+                  const isAlbum = !!item.album_id;
+
+                  return (
+                    <div 
+                      key={item.id} 
+                      // 🔴 FIXED: Pass section.items to handleItemClick
+                      onClick={() => handleItemClick(item, section.items)}
+                      className={`snap-start shrink-0 cursor-pointer group relative overflow-hidden transition-all duration-300 active:scale-95 ${
+                        isAlbum 
+                          ? "w-[200px] aspect-[1.5/2] rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.5)] border border-white/10" 
+                          : "w-36 flex flex-col gap-2"
+                      }`}
+                    >
+                      {isAlbum ? (
+                        /* MASSIVE ALBUM LAYOUT */
+                        <>
+                          <img 
+                            src={item.image_url} 
+                            className="absolute inset-0 w-full h-full object-cover group-active:scale-105 transition-transform duration-700" 
+                            alt={item.title} 
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent opacity-90"></div>
+                          <div className="absolute bottom-0 left-0 w-full p-8">
+                          
+                            <h3 className="text-white text-2xl font-black  tracking-tighter mb-0 line-clamp-2 leading-tight">
+                              {item.title}
+                            </h3>
+                           
+                          </div>
+                        </>
+                      ) : (
+                        /* STANDARD SONG LAYOUT */
+                        <>
+                          <div className="w-36 h-36 rounded-3xl shadow-lg border border-white/10 relative overflow-hidden bg-neutral-800">
+                            <img src={item.image_url} className="absolute inset-0 w-full h-full object-cover" alt={item.title} />
+                            <div className="absolute inset-0 bg-black/20"></div>
+                          </div>
+                          <p className="text-white font-bold text-[14px] px-8 truncate w-36">{item.title}</p>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* LIST VIEW REMAINS UNCHANGED */
+              <div className="flex flex-col gap-3 px-6 min-h-[200px]">
+                {section.items.slice(0, 5).map((item) => (
+                  <div 
+                    key={item.id} 
+                    // 🔴 FIXED: Pass section.items to handleItemClick
+                    onClick={() => handleItemClick(item, section.items)}
+                    className="w-full flex items-center gap-4 p-2 rounded-2xl bg-white/5 border border-white/5 active:bg-white/10 transition-colors cursor-pointer"
+                  >
+                    <img src={item.image_url} className="w-12 h-12 rounded-xl object-cover" alt="" />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-white font-bold text-sm truncate">{item.title}</h4>
+                      <p className="text-neutral-500 text-[10px] truncate">{item.subtitle || item.songs?.artists?.name}</p>
+                    </div>
                   </div>
-                </>
-              ) : (
-                /* 🟢 STANDARD SONG LAYOUT */
-                <>
-                  <div className="w-36 h-36 rounded-3xl shadow-lg border border-white/10 relative overflow-hidden bg-neutral-800">
-                    <img src={item.image_url} className="absolute inset-0 w-full h-full object-cover" alt={item.title} />
-                    <div className="absolute inset-0 bg-black/20"></div>
-                  </div>
-                  <p className="text-white font-bold text-xs px-1 truncate w-36">{item.title}</p>
-                </>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    ) : (
-      /* LIST VIEW REMAINS UNCHANGED */
-      <div className="flex flex-col gap-3 px-6 min-h-[200px]">
-        {section.items.slice(0, 5).map((item) => (
-          <div 
-            key={item.id} 
-            onClick={() => handleItemClick(item)}
-            className="w-full flex items-center gap-4 p-2 rounded-2xl bg-white/5 border border-white/5 active:bg-white/10 transition-colors cursor-pointer"
-          >
-            <img src={item.image_url} className="w-12 h-12 rounded-xl object-cover" alt="" />
-            <div className="flex-1 min-w-0">
-              <h4 className="text-white font-bold text-sm truncate">{item.title}</h4>
-              <p className="text-neutral-500 text-[10px] truncate">{item.subtitle || item.songs?.artists?.name}</p>
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
-      </div>
-    )}
-  </div>
-))}
 
         {/* 3. DISCOVER ARTISTS */}
         <div className="mb-6 animate-fade-in">

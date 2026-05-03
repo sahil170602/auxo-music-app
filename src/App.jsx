@@ -10,8 +10,9 @@ import SeeAllScreen from './components/SeeAllScreen';
 import SearchScreen from './components/SearchScreen';
 import LibraryScreen from './components/LibraryScreen';
 import AlbumDetailScreen from './components/AlbumDetailScreen';
-import PremiumScreen from './components/PremiumScreen'; // 🔴 IMPORTED NEW SCREEN
-import AIScreen from './components/AIScreen'; // 🔴 IMPORTED NEW SCREEN
+import PremiumScreen from './components/PremiumScreen'; 
+import AIScreen from './components/AIScreen'; 
+import ProfileScreen from './components/ProfileScreen'; 
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -64,36 +65,14 @@ function App() {
     }
   };
 
-  // 🔴 UPDATED: Added 'premium' and 'ai' so the bottom nav stays visible on these pages!
+  // UI logic: Keep UI visible for main tabs, but hide for subpages/overlays
   const tabsWithUI = ['home', 'search', 'library', 'premium', 'ai'];
   const showUI = tabsWithUI.includes(activeTab) && !subPage;
 
   if (isLoading) return <SplashScreen onFinish={() => setIsLoading(false)} />;
 
-  const renderContent = () => {
-    if (subPage) {
-      if (subPage.type === 'album-detail') {
-        return (
-          <AlbumDetailScreen 
-            album={subPage.album} 
-            onBack={closeSubPage} 
-            onOpenSubPage={openSubPage}
-            playQueue={handlePlayQueue}
-          />
-        );
-      }
-      
-      return (
-        <SeeAllScreen 
-          {...subPage} 
-          onBack={closeSubPage} 
-          playQueue={handlePlayQueue} 
-          onOpenSubPage={openSubPage} 
-        />
-      );
-    }
-
-    // 🔴 UPDATED: Routing logic now points to our beautiful new components
+  // 🔴 1. MAIN TABS (Always stays mounted in the background so it doesn't vanish)
+  const renderMainTab = () => {
     switch (activeTab) {
       case 'home':
         return <HomeScreen onOpenSubPage={openSubPage} playQueue={handlePlayQueue} />;
@@ -110,6 +89,35 @@ function App() {
     }
   };
 
+  // 🔴 2. SUBPAGES & OVERLAYS (Renders ON TOP of the main tab)
+  const renderOverlay = () => {
+    if (!subPage) return null;
+
+    if (subPage.type === 'profile') {
+      return <ProfileScreen onBack={closeSubPage} />;
+    }
+
+    if (subPage.type === 'album-detail') {
+      return (
+        <AlbumDetailScreen 
+          album={subPage.album} 
+          onBack={closeSubPage} 
+          onOpenSubPage={openSubPage}
+          playQueue={handlePlayQueue}
+        />
+      );
+    }
+    
+    return (
+      <SeeAllScreen 
+        {...subPage} 
+        onBack={closeSubPage} 
+        playQueue={handlePlayQueue} 
+        onOpenSubPage={openSubPage} 
+      />
+    );
+  };
+
   return (
     <>
       {!isAuthenticated ? (
@@ -119,8 +127,13 @@ function App() {
           activeTab={activeTab} 
           setActiveTab={setActiveTab} 
           showUI={showUI}
+          onOpenSubPage={openSubPage}
         >
-          {renderContent()}
+          {/* Main tab underneath */}
+          {renderMainTab()}
+          
+          {/* Overlays on top */}
+          {renderOverlay()}
         </MobileLayout>
       )}
     </>

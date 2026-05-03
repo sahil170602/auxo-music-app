@@ -1,5 +1,6 @@
+// src/components/MusicContext.jsx
 import { createContext, useState, useContext, useRef, useEffect } from 'react';
-import { supabase } from '../lib/supabase'; // 🔴 Don't forget this import!
+import { supabase } from '../lib/supabase'; 
 
 const MusicContext = createContext();
 
@@ -13,86 +14,96 @@ export const MusicProvider = ({ children }) => {
   
   const audioRef = useRef(new Audio());
 
+  // 🔴 HELPER: Bulletproof Play Function
+  // Handles the async nature of mobile audio and prevents "interrupted by call" crashes
+  const playAudio = async () => {
+    try {
+      if (audioRef.current.src) {
+        await audioRef.current.play();
+        setIsPlaying(true);
+      }
+    } catch (err) {
+      console.error("AUXO Playback Blocked:", err);
+      setIsPlaying(false);
+    }
+  };
+
   const playSong = (songList, index) => {
     setQueue(songList);
     setCurrentIndex(index);
     setCurrentSong(songList[index]);
-    setIsPlaying(true);
+    // The useEffect below handles the actual .play() call
   };
 
-  // 🔴 Playback Trigger
+  // 🔴 SYNC UI WITH HARDWARE (Handles phone calls/interruptions)
+  useEffect(() => {
+    const audio = audioRef.current;
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    // If the OS pauses the music (e.g., for a call), update our state
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+
+    return () => {
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+    };
+  }, []);
+
+  // 🔴 PLAYBACK TRIGGER
   useEffect(() => {
     if (currentSong) {
-      // Check for audio_url (our DB column name). 
-      // Fallback to song_url just in case you have older test data.
       const url = currentSong.audio_url || currentSong.song_url;
       
       if (url) {
+        // Essential for mobile: Reset and load the new source
+        audioRef.current.pause();
         audioRef.current.src = url;
-        audioRef.current.play().catch(err => {
-          console.error("Playback error:", err);
-          setIsPlaying(false);
-        });
+        audioRef.current.load(); 
+        
+        playAudio();
       } else {
-        console.error("AUXO Error: No audio URL found for this track!", currentSong);
+        console.error("AUXO Error: No audio URL found!");
         setIsPlaying(false);
       }
     }
   }, [currentSong]);
 
-  // 🔴 NEW: The "Recently Played" Background Tracker
+  // 🔴 THE "RECENTLY PLAYED" TRACKER
   useEffect(() => {
     const recordRecentPlay = async () => {
       if (!currentSong) return;
-
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
 
-        // 1. Delete the song if it's already in the history to prevent duplicates
-        await supabase
-          .from('recently_played')
-          .delete()
-          .eq('user_id', session.user.id)
-          .eq('song_id', currentSong.id);
+        await supabase.from('recently_played').delete().eq('user_id', session.user.id).eq('song_id', currentSong.id);
+        await supabase.from('recently_played').insert({
+          user_id: session.user.id,
+          song_id: currentSong.id,
+          played_at: new Date().toISOString() 
+        });
 
-        // 2. Insert it again as the absolute most recent play
-        await supabase
-          .from('recently_played')
-          .insert({
-            user_id: session.user.id,
-            song_id: currentSong.id,
-            played_at: new Date().toISOString() 
-          });
-
-        // 3. Clear the cache so the Home Screen refreshes automatically!
         localStorage.removeItem('auxo_list_recently-played'); 
-        
-      } catch (err) {
-        console.error("Error updating recently played:", err);
-      }
+      } catch (err) { console.error("Error updating recently played:", err); }
     };
-
     recordRecentPlay();
-  }, [currentSong]); // Triggers automatically whenever the song changes
+  }, [currentSong]); 
 
-  // Auto-Play Next / Repeat Logic
-  useEffect(() => {
-    const audio = audioRef.current;
-    const handleEnded = () => {
-      if (repeatMode === 'one') {
-        audio.currentTime = 0;
-        audio.play();
-      } else {
-        handleNext();
-      }
-    };
-    audio.addEventListener('ended', handleEnded);
-    return () => audio.removeEventListener('ended', handleEnded);
-  }, [currentIndex, queue, repeatMode]);
-
+  // 🔴 NAVIGATION LOGIC
   const handleNext = () => {
-    if (currentIndex < queue.length - 1) {
+    if (!queue || queue.length === 0) return;
+
+    if (isShuffle) {
+      let randomIndex = Math.floor(Math.random() * queue.length);
+      if (queue.length > 1 && randomIndex === currentIndex) {
+        randomIndex = (randomIndex + 1) % queue.length;
+      }
+      setCurrentIndex(randomIndex);
+      setCurrentSong(queue[randomIndex]);
+    } else if (currentIndex < queue.length - 1) {
       setCurrentIndex(prev => prev + 1);
       setCurrentSong(queue[currentIndex + 1]);
     } else if (repeatMode === 'all') {
@@ -104,16 +115,43 @@ export const MusicProvider = ({ children }) => {
   };
 
   const handlePrev = () => {
+    if (!queue || queue.length === 0) return;
+
+    if (audioRef.current.currentTime > 3) {
+      audioRef.current.currentTime = 0;
+      return;
+    }
+
     if (currentIndex > 0) {
       setCurrentIndex(prev => prev - 1);
       setCurrentSong(queue[currentIndex - 1]);
+    } else if (repeatMode === 'all') {
+      setCurrentIndex(queue.length - 1);
+      setCurrentSong(queue[queue.length - 1]);
     }
   };
 
+  // 🔴 AUTO-PLAY / ENDED LOGIC
+  useEffect(() => {
+    const audio = audioRef.current;
+    const handleEnded = () => {
+      if (repeatMode === 'one') {
+        audio.currentTime = 0;
+        playAudio();
+      } else {
+        handleNext();
+      }
+    };
+    audio.addEventListener('ended', handleEnded);
+    return () => audio.removeEventListener('ended', handleEnded);
+  }, [currentIndex, queue, repeatMode, isShuffle]);
+
   const togglePlay = () => {
-    if (isPlaying) audioRef.current.pause();
-    else audioRef.current.play();
-    setIsPlaying(!isPlaying);
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      playAudio();
+    }
   };
 
   return (

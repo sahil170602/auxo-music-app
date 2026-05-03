@@ -1,85 +1,95 @@
 // src/components/ProfileScreen.jsx
-import { useMusic } from '../context/MusicContext';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 export default function ProfileScreen({ onBack }) {
-  // Mock stats - these could eventually come from Supabase
-  const stats = [
-    { label: 'Liked', value: '124' },
-    { label: 'Playlists', value: '12' },
-    { label: 'Minutes', value: '2.4k' }
-  ];
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProfile() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        setProfile(data);
+      }
+      setLoading(false);
+    }
+    fetchProfile();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.reload(); // Refresh to clear states and show login screen
+  };
 
   return (
-    <div className="w-full h-full bg-neutral-950 flex flex-col animate-fade-in relative overflow-hidden pb-32">
+    <div className="fixed inset-0 z-[200] bg-neutral-950 flex flex-col animate-slide-up-full overflow-hidden">
       
-      {/* 🔴 Background Glow Orbs */}
-      <div className="absolute -top-24 -right-24 w-64 h-64 bg-fuchsia-600/20 rounded-full blur-[100px] pointer-events-none"></div>
-      <div className="absolute top-1/2 -left-24 w-64 h-64 bg-cyan-600/10 rounded-full blur-[100px] pointer-events-none"></div>
-
-      {/* Header Navigation */}
-      <div className="flex items-center px-6 pt-8 pb-4 relative z-10">
-        <button 
-          onClick={onBack}
-          className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-white active:scale-90 transition-transform"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
-          </svg>
+      {/* HEADER */}
+      <div className="flex items-center justify-between px-6 pt-[calc(env(safe-area-inset-top,24px)+1rem)] pb-4 shrink-0 relative z-20">
+        <button onClick={onBack} className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-white active:scale-90 transition-transform">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
         </button>
-        <h2 className="ml-4 text-sm font-black text-white uppercase tracking-[0.3em]">Account</h2>
+        <span className="text-[15px] font-black tracking-widest text-neutral-500 uppercase">Profile</span>
+        <div className="w-10"></div>
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar px-6 pt-6 relative z-10">
-        
-        {/* Profile Identity Card */}
-        <div className="flex flex-col items-center mb-10">
-          <div className="w-32 h-32 rounded-[3rem] p-1 bg-gradient-to-tr from-fuchsia-500 to-cyan-500 shadow-2xl mb-6">
-            <div className="w-full h-full bg-neutral-900 rounded-[calc(3rem-4px)] flex items-center justify-center overflow-hidden">
-               {/* Replace with actual profile image if available */}
-               <svg className="w-16 h-16 text-white/20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <div className="flex-1 overflow-y-auto px-6 pb-24">
+        {loading ? (
+          <div className="flex justify-center mt-20"><div className="w-8 h-8 border-4 border-fuchsia-500 border-t-transparent rounded-full animate-spin"></div></div>
+        ) : (
+          <div className="flex flex-col items-center mt-10 animate-fade-in">
+            
+            {/* AVATAR GLOW CONTAINER */}
+            <div className="relative group mb-6">
+              <div className="absolute inset-0 bg-gradient-to-tr from-fuchsia-600 to-cyan-500 rounded-full blur-2xl opacity-40"></div>
+              <div className="relative w-32 h-32 rounded-full border-4 border-neutral-900 shadow-2xl overflow-hidden bg-neutral-800">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} className="w-full h-full object-cover" alt="Profile" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-neutral-800 to-neutral-900 text-white text-4xl font-black italic">
+                    {profile?.full_name?.charAt(0) || "U"}
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* USER INFO */}
+            <h2 className="text-3xl font-black text-white tracking-tighter mb-1">
+              {profile?.full_name || 'AUXO User'}
+            </h2>
+            <p className="text-neutral-500 font-bold text-xs tracking-widest uppercase mb-10">
+              Premium Member
+            </p>
+
+            {/* ACTION BUTTONS */}
+            <div className="w-full max-w-sm flex flex-col gap-4">
+              <button className="w-full flex items-center justify-between p-5 rounded-2xl bg-white/5 border border-white/5 active:scale-95 transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                  </div>
+                  <span className="text-white font-bold text-sm">Account Settings</span>
+                </div>
+                <svg className="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+              </button>
+
+              <button 
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 font-black tracking-widest text-xs uppercase active:scale-95 transition-all mt-4"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                Sign Out
+              </button>
+            </div>
+
           </div>
-          <h1 className="text-3xl font-black text-white italic tracking-tighter mb-1">Sahil Meshram</h1>
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 bg-fuchsia-500/10 border border-fuchsia-500/20 rounded-full text-[9px] font-black text-fuchsia-400 uppercase tracking-widest">Full-stack Developer</span>
-          </div>
-        </div>
-
-        {/* Stats Row */}
-        <div className="flex justify-between gap-4 mb-10">
-          {stats.map((s, i) => (
-            <div key={i} className="flex-1 bg-white/5 border border-white/5 rounded-3xl p-4 text-center backdrop-blur-xl">
-              <p className="text-xl font-black text-white mb-0.5">{s.value}</p>
-              <p className="text-[9px] font-black text-neutral-500 uppercase tracking-widest">{s.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Settings/Account List - Coming Soon Section */}
-        <div className="space-y-4 relative">
-          <h3 className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] mb-4 ml-1">Settings</h3>
-          
-          {['Edit Profile', 'Audio Quality', 'Connected Devices', 'Notifications', 'Privacy'].map((item) => (
-            <div key={item} className="w-full flex items-center justify-between p-5 bg-white/5 border border-white/5 rounded-[1.5rem] opacity-50 grayscale cursor-not-allowed">
-              <span className="text-sm font-bold text-white">{item}</span>
-              <svg className="w-4 h-4 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          ))}
-
-          {/* Coming Soon Overlay */}
-          <div className="absolute inset-0 top-8 flex items-center justify-center pointer-events-none">
-            <div className="bg-fuchsia-600/90 text-white px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest shadow-2xl rotate-[-5deg] backdrop-blur-md">
-              Features Coming Soon
-            </div>
-          </div>
-        </div>
-
-        {/* Sign Out */}
-        <button className="w-full mt-12 py-5 bg-red-500/5 border border-red-500/10 rounded-[2rem] text-red-500 font-black text-xs uppercase tracking-widest active:bg-red-500/10 transition-colors">
-          Sign Out
-        </button>
+        )}
       </div>
     </div>
   );

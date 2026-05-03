@@ -11,10 +11,7 @@ createRoot(document.getElementById('root')).render(
     <MusicProvider>
       <App />
       
-      {/* The Player sits outside the App's main flow. 
-         This allows it to float above the navigation tabs 
-         while the rest of the app changes screens.
-      */}
+      
     </MusicProvider>
   </StrictMode>,
 )
