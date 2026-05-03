@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-export default function Header({ setActiveTab }) {
+// 🔴 FIXED: Added onOpenSubPage to the props here!
+export default function Header({ setActiveTab, onOpenSubPage }) {
   const [profile, setProfile] = useState(null);
 
   useEffect(() => {
@@ -33,10 +34,18 @@ export default function Header({ setActiveTab }) {
         </h1>
       </button>
       
-      {/* Right Side: Profile Icon */}
+      {/* RIGHT SIDE: Premium Profile Icon */}
       <button 
-        onClick={() => setActiveTab('profileScreen')}
-        className="group relative flex items-center active:scale-90 transition-transform"
+        type="button" // Forces it not to submit/refresh
+        onClick={(e) => {
+          e.preventDefault(); // Stops any default browser behavior
+          if (onOpenSubPage) {
+            onOpenSubPage({ type: 'profile' });
+          } else {
+            console.error("AUXO Error: onOpenSubPage is not reaching the Header!");
+          }
+        }} 
+        className="group relative flex items-center active:scale-90 transition-all duration-300"
       >
         <div className="w-10 h-10 rounded-full bg-neutral-800 border-2 border-fuchsia-500/50 overflow-hidden shadow-[0_0_15px_rgba(217,70,239,0.3)] group-hover:border-fuchsia-400 transition-colors">
           {profile?.avatar_url ? (
@@ -47,8 +56,6 @@ export default function Header({ setActiveTab }) {
             </div>
           )}
         </div>
-        
-        {/* Subtle "Premium" dot or indicator if you want one */}
       </button>
       
     </header>
