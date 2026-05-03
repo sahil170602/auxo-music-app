@@ -1,6 +1,20 @@
 @import "tailwindcss";
 
-/* Custom animations for the glowing background */
+/* =========================================
+   HIDE ALL SCROLLBARS GLOBALLY
+   ========================================= */
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+/* =========================================
+   GLOWING BACKGROUND ANIMATIONS
+   ========================================= */
 @keyframes blob {
   0% { transform: translate(0px, 0px) scale(1); }
   33% { transform: translate(30px, -50px) scale(1.1); }
@@ -36,8 +50,7 @@
   100% { transform: translateY(0); border-radius: 0; }
 }
 
-/* Using cubic-bezier for a "springy/smooth" native app feel 
-*/
+/* Using cubic-bezier for a "springy/smooth" native app feel */
 .animate-slide-up-mini {
   animation: slideUpMini 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

@@ -154,9 +154,6 @@ export default function LoginForm({ onToggleMode, onLoginSuccess }) {
           </svg>
           Continue with Apple
         </button>
-
-       
-
       </div>
     </div>
   );
