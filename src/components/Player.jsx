@@ -218,7 +218,7 @@ export default function Player({ showBottomNav = true }) {
         <div 
           onClick={openExpandedPlayer}
           className={`fixed left-4 right-4 h-16 bg-neutral-900/90 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center px-4 gap-4 z-[600] animate-slide-up-mini shadow-2xl cursor-pointer overflow-hidden transition-all duration-300 ${
-            showBottomNav ? 'bottom-24' : 'bottom-6'
+            showBottomNav ? 'bottom-[calc(6.5rem+env(safe-area-inset-bottom,0px))]' : 'bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))]'
           }`}
         >
           <img src={currentSong.image_url} className="w-10 h-10 rounded-lg object-cover shadow-lg" alt="" />
@@ -234,7 +234,7 @@ export default function Player({ showBottomNav = true }) {
               {isPlaying ? (
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
               ) : (
-                <svg className="w-5 h-5 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <svg className="w-8 h-8 fill-current translate-x-0.5" viewBox="0 0 28 24"><path d="M8 5v14l11-7z"/></svg>
               )}
             </button>
             <button disabled={currentIndex === queueLength - 1 && repeatMode !== 'all'} onClick={handleNext} className="text-white disabled:opacity-30 active:scale-90 transition-transform">
@@ -312,9 +312,9 @@ export default function Player({ showBottomNav = true }) {
                  <button disabled={currentIndex === 0} onClick={handlePrev} className="text-white disabled:opacity-20 scale-125 active:scale-100 transition-transform"><svg className="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6L18 18V6z"/></svg></button>
                  <button onClick={togglePlay} className="w-20 h-20 bg-white rounded-[2rem] flex items-center justify-center text-black shadow-xl active:scale-90 transition-transform">
                     {isPlaying ? (
-                      <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                      <svg className="w-10 h-10 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                     ) : (
-                      <svg className="w-8 h-8 fill-current translate-x-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                      <svg className="w-12 h-12 fill-current translate-x-1" viewBox="0 0 28 24"><path d="M8 5v14l11-7z"/></svg>
                     )}
                  </button>
                  <button disabled={currentIndex === queueLength - 1 && repeatMode !== 'all'} onClick={handleNext} className="text-white disabled:opacity-20 scale-125 active:scale-100 transition-transform"><svg className="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
@@ -381,29 +381,29 @@ export default function Player({ showBottomNav = true }) {
               </div>
 
               <div className="flex-1 relative flex flex-col items-center justify-center w-full">
-                  
-                  <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-neutral-950 to-transparent z-10 pointer-events-none"></div>
-                  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-neutral-950 to-transparent z-10 pointer-events-none"></div>
+                 
+                 <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-neutral-950 to-transparent z-10 pointer-events-none"></div>
+                 <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-neutral-950 to-transparent z-10 pointer-events-none"></div>
 
-                  {/* 🔴 REAL LYRICS DISPLAY */}
-                  {lyricsList.length > 0 ? (
-                    <div className="absolute top-1/2 left-0 right-0 -mt-[40px] transition-transform duration-700 ease-out flex flex-col items-center" style={{ transform: `translateY(-${currentLyricIndex * 80}px)` }}>
-                       {lyricsList.map((lyric, idx) => {
-                          const distance = Math.abs(idx - currentLyricIndex);
+                 {/* 🔴 REAL LYRICS DISPLAY */}
+                 {lyricsList.length > 0 ? (
+                   <div className="absolute top-1/2 left-0 right-0 -mt-[40px] transition-transform duration-700 ease-out flex flex-col items-center" style={{ transform: `translateY(-${currentLyricIndex * 80}px)` }}>
+                      {lyricsList.map((lyric, idx) => {
+                         const distance = Math.abs(idx - currentLyricIndex);
 
-                          let styling = 'opacity-0 scale-75'; 
-                          
-                          if (distance === 0) {
+                         let styling = 'opacity-0 scale-75'; 
+                         
+                         if (distance === 0) {
                              styling = 'text-white text-[28px] leading-tight font-black scale-100 opacity-100 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]';
-                          } else if (distance === 1) {
+                         } else if (distance === 1) {
                              styling = 'text-white/40 text-[20px] font-bold scale-90 opacity-100';
-                          } else if (distance === 2) {
+                         } else if (distance === 2) {
                              styling = 'text-white/20 text-[16px] font-bold scale-80 opacity-100';
-                          } else {
+                         } else {
                              styling = 'text-white/5 text-[14px] font-medium scale-75 opacity-100 pointer-events-none';
-                          }
+                         }
 
-                          return (
+                         return (
                              <div 
                                 key={idx} 
                                 onClick={() => handleSeek({target: {value: lyric.time}})} 
@@ -411,17 +411,17 @@ export default function Player({ showBottomNav = true }) {
                               >
                                 <p className="line-clamp-2">{lyric.text}</p>
                              </div>
-                          );
+                         );
                        })}
                     </div>
-                  ) : (
-                    // Fallback UI if there are no lyrics in the DB for this song
-                    <div className="flex flex-col items-center justify-center text-center px-8 opacity-50">
-                      <svg className="w-12 h-12 mb-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
-                      <h4 className="text-white text-lg font-bold">No Lyrics Available</h4>
-                      <p className="text-white/50 text-xs mt-1">Lyrics have not been added for this track yet.</p>
-                    </div>
-                  )}
+                 ) : (
+                   // Fallback UI if there are no lyrics in the DB for this song
+                   <div className="flex flex-col items-center justify-center text-center px-8 opacity-50">
+                     <svg className="w-12 h-12 mb-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+                     <h4 className="text-white text-lg font-bold">No Lyrics Available</h4>
+                     <p className="text-white/50 text-xs mt-1">Lyrics have not been added for this track yet.</p>
+                   </div>
+                 )}
               </div>
 
             </div>
