@@ -5,8 +5,7 @@ import Player from './Player';
 
 export default function MobileLayout({ children, activeTab, setActiveTab, showUI, onOpenSubPage }) {
   return (
-    // 🔴 FIXED: Explicit background color and height to prevent white screen issues
-    <div className="flex flex-col h-screen bg-neutral-950 text-white overflow-hidden relative">
+    <div className="flex flex-col h-screen w-full bg-neutral-950 text-white overflow-hidden fixed inset-0 overscroll-none select-none">
       
       {/* 🔴 BACKGROUND ORBS: Subtle liquid-glass effect base */}
       <div className="absolute -top-20 -left-20 w-64 h-64 bg-fuchsia-600/10 rounded-full blur-[100px] pointer-events-none"></div>
@@ -16,13 +15,17 @@ export default function MobileLayout({ children, activeTab, setActiveTab, showUI
       {showUI && (
         <Header 
           setActiveTab={setActiveTab} 
-          onOpenSubPage={onOpenSubPage} // 🔴 TRIGGERS PROFILE OVERLAY
+          onOpenSubPage={onOpenSubPage} 
         />
       )}
       
-      {/* MAIN CONTENT AREA */}
-      {/* 🔴 DYNAMIC PADDING: Ensures content isn't hidden behind the Player/Nav */}
-      <main className={`flex-1 overflow-y-auto no-scrollbar relative z-10 ${showUI ? 'pb-32' : 'pb-0'}`}>
+      {/* 🔴 MAIN CONTENT AREA - SCROLL LOCK FIXES */}
+      {/* overscroll-contain prevents the "bounce" from bubbling up to the browser */}
+      <main 
+        className={`flex-1 overflow-y-auto overscroll-contain touch-pan-y relative z-10 no-scrollbar ${
+          showUI ? 'pb-36' : 'pb-0'
+        }`}
+      >
         {children}
       </main>
 
